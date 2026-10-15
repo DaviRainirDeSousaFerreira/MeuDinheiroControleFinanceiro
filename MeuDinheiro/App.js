@@ -30,7 +30,8 @@ export default function App() {
   const [limiteMensal, setLimiteMensal] = useState('800');
   const [limiteCarregado, setLimiteCarregado] = useState(false);
   const [limiteInput, setLimiteInput] = useState('800');
-    
+  const [dataInicial, setDataInicial] = useState('');
+  const [dataFinal, setDataFinal] = useState('');  
   
   useEffect(() => {
     async function carregarDespesas() {
@@ -155,6 +156,44 @@ const totalGastos = despesas.reduce(
     });
   }
 
+  function aplicarMascaraData(texto) {
+    const numeros = texto.replace(/\D/g, '').slice(0, 8);
+
+    if (numeros.length <= 2) {
+      return numeros;
+    }
+
+    if (numeros.length <= 4) {
+      return `${numeros.slice(0, 2)}/${numeros.slice(2)}`;
+    }
+
+    return `${numeros.slice(0, 2)}/${numeros.slice(2, 4)}/${numeros.slice(4)}`;
+  }
+
+
+  function converterDataBrasileira(texto) {
+    if (!texto || texto.length !== 10) {
+      return null;
+    }
+
+    const [dia, mes, ano] = texto.split('/').map(Number);
+
+    const data = new Date(ano, mes - 1, dia);
+
+    // Verifica se a data realmente existe
+    if (
+      data.getDate() !== dia ||
+      data.getMonth() !== mes - 1 ||
+      data.getFullYear() !== ano
+    ) {
+      return null;
+    }
+
+    data.setHours(0, 0, 0, 0);
+
+    return data;
+  }
+
 
   function salvarNovoLimite() {
     const valorLimite = Number(limiteInput.replace(',', '.'));
@@ -239,12 +278,49 @@ const totalGastos = despesas.reduce(
   }
 
   
-  const despesasFiltradas =
-    filtroCategoria === 'Todas'
-      ? despesas
-      : despesas.filter(
-          despesa => despesa.categoria === filtroCategoria
-        );
+  const dataInicialConvertida = converterDataBrasileira(dataInicial);
+  const dataFinalConvertida = converterDataBrasileira(dataFinal);
+
+  const despesasFiltradas = despesas.filter(despesa => {
+    const categoriaCorreta =
+      filtroCategoria === 'Todas' ||
+      despesa.categoria === filtroCategoria;
+
+    // Mantém despesas antigas sem data somente
+    // quando nenhum período foi informado
+    if (!despesa.data) {
+      return (
+        categoriaCorreta &&
+        !dataInicial &&
+        !dataFinal
+      );
+    }
+
+    const dataDespesa = new Date(despesa.data);
+    dataDespesa.setHours(0, 0, 0, 0);
+
+    // Não aplica datas incompletas ou inválidas
+    if (
+      (dataInicial && !dataInicialConvertida) ||
+      (dataFinal && !dataFinalConvertida)
+    ) {
+      return false;
+    }
+
+    const dentroDaDataInicial =
+      !dataInicialConvertida ||
+      dataDespesa >= dataInicialConvertida;
+
+    const dentroDaDataFinal =
+      !dataFinalConvertida ||
+      dataDespesa <= dataFinalConvertida;
+
+    return (
+      categoriaCorreta &&
+      dentroDaDataInicial &&
+      dentroDaDataFinal
+    );
+  });
 
 
   return (
@@ -464,6 +540,51 @@ const totalGastos = despesas.reduce(
         </ScrollView>
 
 
+        <View style={styles.filtroPeriodo}>
+          <Text style={styles.tituloPeriodo}>
+            Consultar por período
+          </Text>
+
+          <View style={styles.camposPeriodo}>
+            <View style={styles.campoData}>
+              <Text style={styles.rotuloData}>Data inicial</Text>
+              <TextInput
+                style={styles.inputData}
+                placeholder="DD/MM/AAAA"
+                value={dataInicial}
+                onChangeText={texto => setDataInicial(aplicarMascaraData(texto))}
+                keyboardType="numeric"
+                maxLength={10}
+              />
+            </View>
+
+            <View style={styles.campoData}>
+              <Text style={styles.rotuloData}>Data final</Text>
+              <TextInput
+                style={styles.inputData}
+                placeholder="DD/MM/AAAA"
+                value={dataFinal}
+                onChangeText={texto => setDataFinal(aplicarMascaraData(texto))}
+                keyboardType="numeric"
+                maxLength={10}
+              />
+            </View>
+          </View>
+
+          <Pressable
+            style={styles.botaoLimparPeriodo}
+            onPress={() => {
+              setDataInicial('');
+              setDataFinal('');
+            }}
+          >
+            <Text style={styles.textoLimparPeriodo}>
+              Limpar período
+            </Text>
+          </Pressable>
+          
+        </View>
+    
         {despesasFiltradas.length === 0 ? (
           <View style={styles.estadoVazio}>
             <Text style={styles.iconeVazio}>📊</Text>
@@ -499,6 +620,12 @@ const totalGastos = despesas.reduce(
                   <Text style={styles.categoriaDespesa}>
                     {despesa.categoria}
                   </Text>
+
+                  <Text style={styles.dataDespesa}>
+                    {despesa.data
+                      ? new Date(despesa.data).toLocaleDateString('pt-BR')
+                      : 'Data não registrada'}
+                  </Text>                  
                 </View>
 
                 <View style={styles.colunaValor}>
@@ -789,6 +916,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 5,
   },
+  dataDespesa: {
+    fontSize: 12,
+    color: '#8B8BA7',
+    marginTop: 4,
+  },
   colunaValor: {
     alignItems: 'flex-end',
     gap: 7,
@@ -810,34 +942,34 @@ const styles = StyleSheet.create({
     marginTop: 28,
   },
   
-filtros: {
-  marginBottom: 14,
-  flexGrow: 0,
-},
-conteudoFiltros: {
-  gap: 8,
-  paddingRight: 4,
-},
-botaoFiltro: {
-  paddingHorizontal: 15,
-  paddingVertical: 10,
-  borderRadius: 20,
-  backgroundColor: '#FFFFFF',
-  borderWidth: 1,
-  borderColor: '#E9E4F0',
-},
-botaoFiltroSelecionado: {
-  backgroundColor: '#6C3FC5',
-  borderColor: '#6C3FC5',
-},
-textoFiltro: {
-  color: '#625A70',
-  fontSize: 12,
-  fontWeight: '600',
-},
-textoFiltroSelecionado: {
-  color: '#FFFFFF',
-},
+  filtros: {
+    marginBottom: 14,
+    flexGrow: 0,
+  },
+  conteudoFiltros: {
+    gap: 8,
+    paddingRight: 4,
+  },
+  botaoFiltro: {
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E9E4F0',
+  },
+  botaoFiltroSelecionado: {
+    backgroundColor: '#6C3FC5',
+    borderColor: '#6C3FC5',
+  },
+  textoFiltro: {
+    color: '#625A70',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  textoFiltroSelecionado: {
+    color: '#FFFFFF',
+  },
 
   cartaoLimite: {
     backgroundColor: '#FFFFFF',
@@ -882,9 +1014,61 @@ textoFiltroSelecionado: {
     marginBottom: 16,
   },
   textoSaldoLimite: {
-  fontSize: 14,
-  fontWeight: '600',
-  color: '#7545B5',
-  marginBottom: 12,
-},
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#7545B5',
+    marginBottom: 12,
+  },
+
+  filtroPeriodo: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#E9E4F0',
+  },
+  tituloPeriodo: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#302642',
+    marginBottom: 14,
+  },
+  camposPeriodo: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  campoData: {
+    flex: 1,
+  },
+  rotuloData: {
+    fontSize: 12,
+    color: '#625A70',
+    marginBottom: 7,
+  },
+  inputData: {
+    backgroundColor: '#FAF9FC',
+    borderWidth: 1,
+    borderColor: '#E9E4F0',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 11,
+    fontSize: 12,
+    color: '#29213A',
+  },
+  botaoLimparPeriodo: {
+    alignSelf: 'flex-start',
+    marginTop: 14,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: '#F1EBFF',
+  },
+  textoLimparPeriodo: {
+    color: '#6C3FC5',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+
+  
 });
