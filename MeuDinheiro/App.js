@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
+import { PieChart } from 'react-native-gifted-charts';
+
 
 import {
   StyleSheet,
@@ -10,6 +12,7 @@ import {
   Pressable,
   ScrollView,
   Alert,
+  Modal,
 } from 'react-native';
 
 
@@ -32,6 +35,9 @@ export default function App() {
   const [limiteInput, setLimiteInput] = useState('800');
   const [dataInicial, setDataInicial] = useState('');
   const [dataFinal, setDataFinal] = useState('');  
+  const [despesaEditando, setDespesaEditando] = useState(null);
+  const [dataDespesaInput, setDataDespesaInput] = useState('');
+  const [modalEdicaoVisivel, setModalEdicaoVisivel] = useState(false);
   
   useEffect(() => {
     async function carregarDespesas() {
@@ -219,8 +225,36 @@ const totalGastos = despesas.reduce(
     );
   }
 
+  function editarDespesa(despesa) {
+    setDespesaEditando(despesa);
+    setModalEdicaoVisivel(true);
+    setNome(despesa.nome);
+    setValor(String(despesa.valor).replace('.', ','));
+    setCategoriaSelecionada(despesa.categoria);
+
+    if (despesa.data) {
+      const data = new Date(despesa.data);
+      const dia = String(data.getDate()).padStart(2, '0');
+      const mes = String(data.getMonth() + 1).padStart(2, '0');
+      const ano = data.getFullYear();
+
+      setDataDespesaInput(`${dia}/${mes}/${ano}`);
+    } else {
+      setDataDespesaInput('');
+    }
+  }
   
+  function cancelarEdicao() {
+    setModalEdicaoVisivel(false);
+    setDespesaEditando(null);
+    setNome('');
+    setValor('');
+    setCategoriaSelecionada('Alimentação');
+    setDataDespesaInput('');
+  }
+
   function adicionarDespesa() {
+
     const nomeFormatado = nome.trim();
     const valorNumerico = Number(valor.replace(',', '.'));
 
@@ -244,7 +278,34 @@ const totalGastos = despesas.reduce(
       return;
     }
 
+    // Se houver uma despesa selecionada, atualiza ela.
+    if (despesaEditando) {
+      const despesasAtualizadas = despesas.map(item =>
+        item.id === despesaEditando.id
+          ? {
+              ...item,
+              nome: nomeFormatado,
+              valor: valorNumerico,
+              categoria: categoriaSelecionada,
+            }
+          : item
+      );
 
+      setDespesas(despesasAtualizadas);
+      setModalEdicaoVisivel(false);
+      setDespesaEditando(null);
+      setNome('');
+      setValor('');
+
+      Alert.alert(
+        'Despesa atualizada!',
+        'Suas alterações foram salvas com sucesso.'
+      );
+
+      return;
+    }
+
+    // Caso contrário, registra uma nova despesa.
     const novaDespesa = {
       id: `${Date.now()}-${Math.random()}`,
       nome: nomeFormatado,
@@ -252,7 +313,6 @@ const totalGastos = despesas.reduce(
       categoria: categoriaSelecionada,
       data: new Date().toISOString(),
     };
-
 
     setDespesas(lista => [...lista, novaDespesa]);
     setNome('');
@@ -322,6 +382,38 @@ const totalGastos = despesas.reduce(
     );
   });
 
+  const gastosPorCategoria = [
+    'Alimentação',
+    'Transporte',
+    'Lazer',
+    'Outros',
+  ].map(categoria => {
+    const total = despesasFiltradas
+      .filter(despesa => despesa.categoria === categoria)
+      .reduce((soma, despesa) => soma + despesa.valor, 0);
+
+    return {
+      categoria,
+      total,
+    };
+  });
+
+  const dadosGrafico = gastosPorCategoria
+    .filter(item => item.total > 0)
+    .map(item => {
+      const cores = {
+        Alimentação: '#8B5CF6',
+        Transporte: '#06B6D4',
+        Lazer: '#F59E0B',
+        Outros: '#EC4899',
+      };
+
+      return {
+        value: item.total,
+        color: cores[item.categoria],
+        text: item.categoria,
+      };
+    });
 
   return (
     <View style={styles.container}>
@@ -407,6 +499,106 @@ const totalGastos = despesas.reduce(
           </Pressable>
         </View>
 
+        <View style={styles.cartaoGrafico}>
+          
+          <View style={styles.cabecalhoGrafico}>
+            <View style={styles.iconeTituloGrafico}>
+              <Text style={styles.emojiTituloGrafico}>📊</Text>
+            </View>
+
+            <View style={styles.textosTituloGrafico}>
+              <Text style={styles.tituloGrafico}>
+                Gastos por categoria
+              </Text>
+              <Text style={styles.subtituloGrafico}>
+                Veja para onde vai seu dinheiro
+              </Text>
+            </View>
+          </View>
+
+
+          {dadosGrafico.length === 0 ? (
+            <Text style={styles.textoSemGrafico}>
+              Não há gastos para exibir neste período.
+            </Text>
+          ) : (
+            <>
+              <PieChart
+                data={dadosGrafico}
+                donut
+                radius={100}
+                innerRadius={60}
+                innerCircleColor="#FFFFFF"
+                centerLabelComponent={() => (
+                  <View style={{ alignItems: 'center' }}>
+                    <Text style={{ fontSize: 12, color: '#8B8BA7' }}>
+                      Total
+                    </Text>
+                    <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#302642' }}>
+                      {formatarMoeda(
+                        dadosGrafico.reduce((soma, item) => soma + item.value, 0)
+                      )}
+                    </Text>
+                  </View>
+                )}
+              />
+
+              {gastosPorCategoria
+                .filter(item => item.total > 0)
+                .map(item => {
+                  const cores = {
+                    Alimentação: '#8B5CF6',
+                    Transporte: '#06B6D4',
+                    Lazer: '#F59E0B',
+                    Outros: '#EC4899',
+                  };
+
+                  return (
+                    <View
+                      key={item.categoria}
+                      style={styles.cartaoLegenda}
+                    >
+                      <View
+                        style={[
+                          styles.iconeLegenda,
+                          { backgroundColor: `${cores[item.categoria]}20` },
+                        ]}
+                      >
+                        <View
+                          style={[
+                            styles.pontoLegendaGrafico,
+                            { backgroundColor: cores[item.categoria] },
+                          ]}
+                        />
+                      </View>
+
+                      <View style={styles.detalhesLegenda}>
+                        <Text style={styles.nomeLegendaGrafico}>
+                          {item.categoria}
+                        </Text>
+
+                        <Text style={styles.percentualLegenda}>
+                          {(
+                            (item.total /
+                              dadosGrafico.reduce(
+                                (soma, dado) => soma + dado.value,
+                                0
+                              )) * 100
+                          ).toFixed(1).replace('.', ',')}% dos gastos
+                        </Text>
+                      </View>
+
+                      <Text style={styles.valorLegendaGrafico}>
+                        {formatarMoeda(item.total)}
+                      </Text>
+                    </View>
+                  );
+
+                })}
+            </>
+          )}
+        </View>
+
         <View style={styles.resumo}>
           <View style={styles.cartaoResumo}>
             <Text style={styles.iconeResumo}>🧾</Text>
@@ -490,9 +682,11 @@ const totalGastos = despesas.reduce(
             onPress={adicionarDespesa}
           >
             <Text style={styles.textoBotaoAdicionar}>
-              +  Adicionar despesa
+              + Adicionar despesa
             </Text>
           </Pressable>
+
+                    
         </View>
 
         <View style={styles.cabecalhoLista}>
@@ -632,6 +826,14 @@ const totalGastos = despesas.reduce(
                   <Text style={styles.valorDespesa}>
                     {formatarMoeda(despesa.valor)}
                   </Text>
+
+                  <Pressable
+                    onPress={() => editarDespesa(despesa)}
+                    hitSlop={8}
+                  >
+                    <Text style={styles.textoEditar}>Editar</Text>
+                  </Pressable>
+
                   <Pressable
                     onPress={() => excluirDespesa(despesa.id)}
                     hitSlop={8}
@@ -648,11 +850,119 @@ const totalGastos = despesas.reduce(
           MeuDinheiro • Organize hoje, planeje o amanhã.
         </Text>
       </ScrollView>
+
+      <Modal
+        visible={modalEdicaoVisivel}
+        transparent
+        animationType="fade"
+        onRequestClose={cancelarEdicao}
+      >
+        <View style={styles.fundoModal}>
+          <View style={styles.conteudoModal}>
+            <Text style={styles.tituloModal}>
+              Editar despesa
+            </Text>
+
+            <Text style={styles.rotuloCampo}>Nome da despesa</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Nome da despesa"
+              placeholderTextColor="#9A94A8"
+              value={nome}
+              onChangeText={setNome}
+            />
+
+            <Text style={styles.rotuloCampo}>Valor da despesa (R$)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ex.: 25,90"
+              placeholderTextColor="#9A94A8"
+              value={valor}
+              onChangeText={setValor}
+              keyboardType="decimal-pad"
+            />
+
+            <Text style={styles.rotuloCampo}>Categoria</Text>
+            <View style={styles.gradeCategorias}>
+              {categorias.map(categoria => {
+                const selecionada =
+                  categoriaSelecionada === categoria.nome;
+
+                return (
+                  <Pressable
+                    key={categoria.nome}
+                    onPress={() => setCategoriaSelecionada(categoria.nome)}
+                    style={[
+                      styles.botaoCategoria,
+                      selecionada && styles.categoriaSelecionada,
+                    ]}
+                  >
+                    <Text style={styles.iconeCategoria}>
+                      {categoria.icone}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.textoCategoria,
+                        selecionada && styles.textoCategoriaSelecionada,
+                      ]}
+                    >
+                      {categoria.nome}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            <Pressable
+              style={styles.botaoAdicionar}
+              onPress={adicionarDespesa}
+            >
+              <Text style={styles.textoBotaoAdicionar}>
+                Salvar alterações
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={cancelarEdicao}
+              style={styles.botaoCancelarEdicao}
+            >
+              <Text style={styles.textoCancelarEdicao}>
+                Cancelar
+              </Text>
+            </Pressable>
+
+          </View>
+        </View>
+
+      </Modal>
+
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  fundoModal: {
+    flex: 1,
+    backgroundColor: 'rgba(20, 10, 35, 0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+
+  conteudoModal: {
+    width: '100%',
+    maxWidth: 440,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 20,
+  },
+
+  tituloModal: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#302642',
+    marginBottom: 18,
+  },
   container: {
     flex: 1,
     backgroundColor: '#F7F6FB',
@@ -930,6 +1240,22 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: 'bold',
   },
+  textoEditar: {
+    color: '#8B5CF6',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  botaoCancelarEdicao: {
+    alignItems: 'center',
+    paddingVertical: 10,
+    marginTop: 8,
+  },
+
+  textoCancelarEdicao: {
+    color: '#6B7280',
+    fontSize: 13,
+    fontWeight: '600',
+  },
   textoExcluir: {
     color: '#B42318',
     fontSize: 12,
@@ -1069,6 +1395,64 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
+  cartaoLegenda: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FAF9FC',
+    borderRadius: 14,
+    padding: 12,
+    marginTop: 10,
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#F0ECF5',
+  },
+  iconeLegenda: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  detalhesLegenda: {
+    flex: 1,
+    gap: 3,
+  },
+  percentualLegenda: {
+    fontSize: 11,
+    color: '#8B8BA7',
+  },
+  cabecalhoGrafico: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    marginBottom: 18,
+  },
+  iconeTituloGrafico: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#F1EBFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  emojiTituloGrafico: {
+    fontSize: 21,
+  },
+  textosTituloGrafico: {
+    flex: 1,
+    gap: 4,
+  },
+  tituloGrafico: {
+    fontSize: 17,
+    fontWeight: 'bold',
+    color: '#302642',
+  },
+  subtituloGrafico: {
+    fontSize: 12,
+    color: '#8B8BA7',
+  },
 
-  
+
 });
