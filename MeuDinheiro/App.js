@@ -1,7 +1,10 @@
+// Hooks do React: useState guarda valores que mudam; useEffect executa tarefas quando a tela inicia ou quando dados mudam.
 import { useEffect, useState } from 'react';
+// Controla a aparência da barra de status do celular (onde aparecem hora, bateria e sinal).
 import { StatusBar } from 'expo-status-bar';
 
 
+// Componentes básicos usados para montar a interface do aplicativo.
 import {
   Text,
   View,
@@ -11,36 +14,52 @@ import {
   Alert,
   Modal,
 } from 'react-native';
+// Lista centralizada das categorias, seus ícones e suas cores.
 import { categorias } from './src/constants/categorias';
+// Funções auxiliares para exibir valores em reais e validar/formatar datas.
 import {
   formatarMoeda,
   aplicarMascaraData,
   converterDataBrasileira,
 } from './src/utils/formatacao';
+// Funções que leem e gravam informações no armazenamento local do celular.
 import { lerDados, salvarDados } from './src/storage/armazenamento';
+// Objeto com os estilos visuais separados do código da tela.
 import { styles } from './src/styles/appStyles';
+// Componentes visuais separados para manter este arquivo mais fácil de ler.
 import CartaoGrafico from './src/components/CartaoGrafico';
 import ModalEditarDespesa from './src/components/ModalEditarDespesa';
 
 
 
 
+// Componente principal: coordena os dados, as regras e a tela do MeuDinheiro.
 export default function App() {
+  // Cada useState guarda um valor que pode mudar durante o uso do aplicativo.
+  // Nome e valor são os campos do formulário de cadastro/edição.
   const [nome, setNome] = useState('');
   const [valor, setValor] = useState('');
+  // Categoria escolhida no formulário e categoria usada para filtrar a lista.
   const [categoriaSelecionada, setCategoriaSelecionada] = useState('Alimentação');
   const [filtroCategoria, setFiltroCategoria] = useState('Todas');
+  // Array com todas as despesas registradas. Cada item tem id, nome, valor, categoria e data.
   const [despesas, setDespesas] = useState([]);
+  // Indica quando a leitura inicial das despesas terminou, para não salvar uma lista vazia antes de carregar os dados antigos.
   const [carregamentoConcluido, setCarregamentoConcluido] = useState(false);
+  // Limite mensal salvo; começa em R$ 800 se ainda não houver outro valor armazenado.
   const [limiteMensal, setLimiteMensal] = useState('800');
   const [limiteCarregado, setLimiteCarregado] = useState(false);
   const [limiteInput, setLimiteInput] = useState('800');
+  // Campos do filtro de período. São textos no formato DD/MM/AAAA.
   const [dataInicial, setDataInicial] = useState('');
   const [dataFinal, setDataFinal] = useState('');  
+  // Guarda a despesa que está sendo editada. null significa que nenhuma está em edição.
   const [despesaEditando, setDespesaEditando] = useState(null);
   const [dataDespesaInput, setDataDespesaInput] = useState('');
   const [modalEdicaoVisivel, setModalEdicaoVisivel] = useState(false);
   
+  // Ao abrir o app, lê as despesas salvas no dispositivo.
+  // O array de dependências vazio [] faz este efeito executar apenas na montagem da tela.
   useEffect(() => {
     async function carregarDespesas() {
       try {
@@ -61,6 +80,7 @@ export default function App() {
     carregarDespesas();
   }, []);
 
+  // Recupera o limite mensal salvo anteriormente, se existir.
   useEffect(() => {
     async function carregarLimite() {
       try {
@@ -82,6 +102,8 @@ export default function App() {
     carregarLimite();
   }, []);
   
+  // Sempre que a lista de despesas mudar, grava a nova versão no armazenamento.
+  // A verificação evita sobrescrever os dados salvos antes de terminar a leitura inicial.
   useEffect(() => {
     if (!carregamentoConcluido) {
       return;
@@ -102,6 +124,7 @@ export default function App() {
   }, [despesas, carregamentoConcluido]);
 
 
+  // Salva o limite quando ele muda, mas somente depois que o valor inicial foi carregado.
   useEffect(() => {
     if (!limiteCarregado) {
       return;
@@ -122,14 +145,18 @@ export default function App() {
   }, [limiteMensal, limiteCarregado]);
 
 
-const totalGastos = despesas.reduce(
+  // Soma o valor de todas as despesas, independentemente de filtros de tela.
+  // reduce percorre a lista e acumula cada valor em um único total.
+  const totalGastos = despesas.reduce(
 (total, despesa) => total + despesa.valor,
 0
 );
 
 
+  // Data atual usada para descobrir quais despesas pertencem ao mês corrente.
   const agora = new Date();
 
+  // Soma somente as despesas do mês e ano atuais. Despesas antigas sem data são ignoradas.
   const gastosMes = despesas
     .filter(despesa => {
       if (!despesa.data) {
@@ -145,18 +172,23 @@ const totalGastos = despesas.reduce(
     })
     .reduce((total, despesa) => total + despesa.valor, 0);
 
+  // Converte o limite, que está guardado como texto, para número para fazer cálculos.
   const limiteNumerico = Number(limiteMensal.replace(',', '.'));
 
+  // Percentual do limite mensal já utilizado; impede divisão por zero.
   const percentualLimite =
     limiteNumerico > 0
       ? (gastosMes / limiteNumerico) * 100
       : 0;
 
+  // true quando os gastos do mês atingem ou ultrapassam o limite definido.
   const limiteAtingido = gastosMes >= limiteNumerico;
 
+  // Quanto ainda resta do limite. Pode ficar negativo se o limite for ultrapassado.
   const saldoLimite = limiteNumerico - gastosMes;
 
 
+  // Valida o campo e atualiza o limite mensal usado nos cálculos e salvo pelo useEffect.
   function salvarNovoLimite() {
     const valorLimite = Number(limiteInput.replace(',', '.'));
 
@@ -181,6 +213,7 @@ const totalGastos = despesas.reduce(
     );
   }
 
+  // Preenche os campos com os dados da despesa escolhida e abre o modal de edição.
   function editarDespesa(despesa) {
     setDespesaEditando(despesa);
     setModalEdicaoVisivel(true);
@@ -200,6 +233,7 @@ const totalGastos = despesas.reduce(
     }
   }
   
+  // Fecha o modal e limpa os campos temporários da edição.
   function cancelarEdicao() {
     setModalEdicaoVisivel(false);
     setDespesaEditando(null);
@@ -209,8 +243,10 @@ const totalGastos = despesas.reduce(
     setDataDespesaInput('');
   }
 
+  // Valida o formulário. Se houver uma despesa em edição, atualiza-a; caso contrário, cria uma nova.
   function adicionarDespesa() {
 
+    // trim() remove espaços no início e no fim do nome; o valor é convertido para número.
     const nomeFormatado = nome.trim();
     const valorNumerico = Number(valor.replace(',', '.'));
 
@@ -234,7 +270,8 @@ const totalGastos = despesas.reduce(
       return;
     }
 
-    // Se houver uma despesa selecionada, atualiza ela.
+    // Se houver uma despesa selecionada, atualiza ela. map() cria uma nova lista,
+    // substituindo somente o item cujo id corresponde ao item em edição.
     if (despesaEditando) {
       const despesasAtualizadas = despesas.map(item =>
         item.id === despesaEditando.id
@@ -261,7 +298,8 @@ const totalGastos = despesas.reduce(
       return;
     }
 
-    // Caso contrário, registra uma nova despesa.
+    // Caso contrário, registra uma nova despesa. O id diferencia cada item,
+    // e toISOString() salva a data/hora em um formato padronizado.
     const novaDespesa = {
       id: `${Date.now()}-${Math.random()}`,
       nome: nomeFormatado,
@@ -281,12 +319,15 @@ const totalGastos = despesas.reduce(
   }
 
 
+  // Cria uma lista sem a despesa cujo id foi informado.
   function excluirDespesa(id) {
     setDespesas(lista =>
       lista.filter(despesa => despesa.id !== id)
     );
   }
 
+  // Busca os metadados da categoria para mostrar o ícone e a cor na lista.
+  // A última categoria serve como alternativa caso o nome não seja encontrado.
   function obterCategoria(nomeCategoria) {
     return categorias.find(
       categoria => categoria.nome === nomeCategoria
@@ -294,9 +335,12 @@ const totalGastos = despesas.reduce(
   }
 
   
+  // Converte as datas digitadas para objetos Date para compará-las com as datas das despesas.
   const dataInicialConvertida = converterDataBrasileira(dataInicial);
   const dataFinalConvertida = converterDataBrasileira(dataFinal);
 
+  // Cria uma lista para exibição que respeita o filtro de categoria e o período escolhido.
+  // A lista original 'despesas' não é alterada por este filtro.
   const despesasFiltradas = despesas.filter(despesa => {
     const categoriaCorreta =
       filtroCategoria === 'Todas' ||
@@ -338,6 +382,7 @@ const totalGastos = despesas.reduce(
     );
   });
 
+  // Calcula o total de gastos em cada categoria, usando a lista já filtrada por categoria/data.
   const gastosPorCategoria = [
     'Alimentação',
     'Transporte',
@@ -354,6 +399,7 @@ const totalGastos = despesas.reduce(
     };
   });
 
+  // O gráfico precisa de itens com value e color; categorias sem gastos não são exibidas.
   const dadosGrafico = gastosPorCategoria
     .filter(item => item.total > 0)
     .map(item => {
@@ -371,6 +417,7 @@ const totalGastos = despesas.reduce(
       };
     });
 
+  // A partir daqui começa o JSX: a estrutura visual que o React Native desenha na tela.
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
@@ -380,6 +427,7 @@ const totalGastos = despesas.reduce(
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.conteudo}
       >
+        {/* Cabeçalho com o nome do aplicativo e o ícone. */}
         <View style={styles.cabecalho}>
           <View>
             <Text style={styles.saudacao}>SEU CONTROLE FINANCEIRO</Text>
@@ -391,6 +439,7 @@ const totalGastos = despesas.reduce(
           </View>
         </View>
 
+        {/* Resumo geral: soma de todas as despesas cadastradas. */}
         <View style={styles.cartaoTotal}>
           <Text style={styles.rotuloTotal}>Total de gastos</Text>
           <Text style={styles.valorTotal}>
@@ -406,6 +455,7 @@ const totalGastos = despesas.reduce(
           </View>
         </View>
 
+        {/* Cartão do limite mensal, com barra de progresso e campo para alterar o limite. */}
         <View style={styles.cartaoLimite}>
           <Text style={styles.tituloLimite}>Limite mensal</Text>
 
@@ -455,12 +505,14 @@ const totalGastos = despesas.reduce(
           </Pressable>
         </View>
 
+        {/* Componente separado que desenha o gráfico e sua legenda. */}
         <CartaoGrafico
           dadosGrafico={dadosGrafico}
           gastosPorCategoria={gastosPorCategoria}
           formatarMoeda={formatarMoeda}
         />
 
+        {/* Pequenos cartões com quantidade de despesas e de categorias utilizadas. */}
         <View style={styles.resumo}>
           <View style={styles.cartaoResumo}>
             <Text style={styles.iconeResumo}>🧾</Text>
@@ -477,6 +529,7 @@ const totalGastos = despesas.reduce(
           </View>
         </View>
 
+        {/* Formulário usado para registrar uma despesa nova. */}
         <Text style={styles.tituloSecao}>Nova despesa</Text>
         <Text style={styles.descricaoSecao}>
           Preencha os dados do seu gasto.
@@ -551,6 +604,7 @@ const totalGastos = despesas.reduce(
                     
         </View>
 
+        {/* Cabeçalho e contador da seção que mostra as despesas registradas. */}
         <View style={styles.cabecalhoLista}>
           <View>
             <Text style={styles.tituloSecao}>Minhas despesas</Text>
@@ -562,6 +616,7 @@ const totalGastos = despesas.reduce(
         </View>
 
         
+        {/* Filtros rápidos: 'Todas' ou uma categoria específica. */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -596,6 +651,7 @@ const totalGastos = despesas.reduce(
         </ScrollView>
 
 
+        {/* Filtro por intervalo de datas; a máscara mantém o formato DD/MM/AAAA. */}
         <View style={styles.filtroPeriodo}>
           <Text style={styles.tituloPeriodo}>
             Consultar por período
@@ -641,6 +697,7 @@ const totalGastos = despesas.reduce(
           
         </View>
     
+        {/* Se não houver resultados, mostra uma mensagem; caso contrário, renderiza cada despesa. */}
         {despesasFiltradas.length === 0 ? (
           <View style={styles.estadoVazio}>
             <Text style={styles.iconeVazio}>📊</Text>
@@ -713,6 +770,7 @@ const totalGastos = despesas.reduce(
         </Text>
       </ScrollView>
 
+      {/* Modal separado. Recebe valores e funções do App por meio de props. */}
       <ModalEditarDespesa
         visivel={modalEdicaoVisivel}
         nome={nome}
@@ -729,4 +787,3 @@ const totalGastos = despesas.reduce(
     </View>
   );
 }
-

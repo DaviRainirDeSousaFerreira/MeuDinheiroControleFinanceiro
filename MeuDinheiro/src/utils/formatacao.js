@@ -1,3 +1,4 @@
+// Recebe um número e o transforma em texto no formato monetário brasileiro, por exemplo R$ 25,90.
 export function formatarMoeda(numero) {
   return numero.toLocaleString('pt-BR', {
     style: 'currency',
@@ -5,7 +6,9 @@ export function formatarMoeda(numero) {
   });
 }
 
+// Formata a digitação da data enquanto a pessoa escreve: 17102026 vira 17/10/2026.
 export function aplicarMascaraData(texto) {
+  // Remove tudo que não for dígito e limita a entrada a oito números (DDMMAAAA).
   const numeros = texto.replace(/\D/g, '').slice(0, 8);
 
   if (numeros.length <= 2) {
@@ -19,6 +22,7 @@ export function aplicarMascaraData(texto) {
   return `${numeros.slice(0, 2)}/${numeros.slice(2, 4)}/${numeros.slice(4)}`;
 }
 
+// Converte DD/MM/AAAA em um objeto Date. Retorna null se a data estiver incompleta ou não existir.
 export function converterDataBrasileira(texto) {
   if (!texto || texto.length !== 10) {
     return null;

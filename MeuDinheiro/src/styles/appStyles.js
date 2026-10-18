@@ -1,6 +1,11 @@
+// StyleSheet organiza os estilos usados pelos componentes React Native.
+// Os nomes abaixo são referenciados no JSX, por exemplo style={styles.container}.
+// Dicas: flex: 1 ocupa o espaço disponível; padding cria espaço interno; margin cria espaço externo;
+// backgroundColor define a cor de fundo; flexDirection organiza os elementos em linha ou coluna.
 import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
+  // --- Modal de edição: fundo escurecido, caixa branca e título. ---
   fundoModal: {
     flex: 1,
     backgroundColor: 'rgba(20, 10, 35, 0.55)',
@@ -23,6 +28,7 @@ export const styles = StyleSheet.create({
     color: '#302642',
     marginBottom: 18,
   },
+  // --- Estrutura geral da tela e cabeçalho do aplicativo. ---
   container: {
     flex: 1,
     backgroundColor: '#F7F6FB',
@@ -61,6 +67,7 @@ export const styles = StyleSheet.create({
   iconeCarteiraTexto: {
     fontSize: 23,
   },
+  // --- Cartão principal com a soma de todos os gastos. ---
   cartaoTotal: {
     backgroundColor: '#6C3FC5',
     padding: 23,
@@ -98,6 +105,7 @@ export const styles = StyleSheet.create({
     color: '#F0E9FF',
     fontSize: 12,
   },
+  // --- Cartões pequenos com quantidades e informações resumidas. ---
   resumo: {
     flexDirection: 'row',
     gap: 12,
@@ -136,6 +144,7 @@ export const styles = StyleSheet.create({
     marginTop: 5,
     marginBottom: 14,
   },
+  // --- Formulário, campos de texto, categorias e botão principal. ---
   formulario: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
@@ -211,6 +220,7 @@ export const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: 'bold',
   },
+  // --- Lista de despesas, estado vazio e detalhes de cada item. ---
   cabecalhoLista: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -305,6 +315,7 @@ export const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
+  // --- Ações secundárias, filtros e consulta por período. ---
   botaoCancelarEdicao: {
     alignItems: 'center',
     paddingVertical: 10,
@@ -321,6 +332,7 @@ export const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
+  // --- Rodapé exibido ao final da tela. ---
   rodape: {
     textAlign: 'center',
     color: '#9A94A8',
@@ -328,6 +340,8 @@ export const styles = StyleSheet.create({
     marginTop: 28,
   },
   
+  // --- Botões de filtro e campos de data. ---
+  // Estilos da faixa horizontal de filtros por categoria.
   filtros: {
     marginBottom: 14,
     flexGrow: 0,
@@ -357,6 +371,8 @@ export const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 
+  // --- Limite mensal, barra de progresso e campos relacionados. ---
+  // Estilos do cartão de limite mensal e de sua barra de progresso.
   cartaoLimite: {
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
@@ -406,6 +422,7 @@ export const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
+  // Estilos dos campos para filtrar despesas por data inicial e final.
   filtroPeriodo: {
     backgroundColor: '#FFFFFF',
     borderRadius: 18,
@@ -455,6 +472,7 @@ export const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
+  // Estilos das linhas da legenda que acompanham o gráfico.
   cartaoLegenda: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -482,6 +500,7 @@ export const styles = StyleSheet.create({
     fontSize: 11,
     color: '#8B8BA7',
   },
+  // Estilos do cabeçalho e dos textos do cartão do gráfico.
   cabecalhoGrafico: {
     flexDirection: 'row',
     alignItems: 'center',

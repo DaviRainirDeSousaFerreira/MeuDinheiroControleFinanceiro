@@ -1,7 +1,11 @@
+// Componentes React Native usados para criar a janela de edição e seus campos.
 import { Modal, Pressable, Text, TextInput, View } from 'react-native';
+// Reutiliza a mesma lista de categorias usada no formulário principal.
 import { categorias } from '../constants/categorias';
 import { styles } from '../styles/appStyles';
 
+// Modal de edição reutilizável. Os valores e funções são recebidos do componente App.
+// Esse padrão de comunicação entre componentes é chamado de props.
 export default function ModalEditarDespesa({
   visivel,
   nome,
@@ -14,6 +18,7 @@ export default function ModalEditarDespesa({
   onCancelar,
   onRequestClose,
 }) {
+  // visible controla se a janela está aberta; os callbacks informam ao App o que o usuário fez.
   return (
       <Modal
         visible={visivel}
@@ -27,6 +32,7 @@ export default function ModalEditarDespesa({
               Editar despesa
             </Text>
 
+            {/* Campo controlado: value mostra o estado atual e onChangeText atualiza esse estado. */}
             <Text style={styles.rotuloCampo}>Nome da despesa</Text>
             <TextInput
               style={styles.input}
@@ -46,6 +52,7 @@ export default function ModalEditarDespesa({
               keyboardType="decimal-pad"
             />
 
+            {/* Cada botão representa uma categoria e destaca a categoria selecionada. */}
             <Text style={styles.rotuloCampo}>Categoria</Text>
             <View style={styles.gradeCategorias}>
               {categorias.map(categoria => {
@@ -77,6 +84,7 @@ export default function ModalEditarDespesa({
               })}
             </View>
 
+            {/* Solicita ao App que valide e salve as alterações. */}
             <Pressable
               style={styles.botaoAdicionar}
               onPress={onSalvar}
@@ -86,6 +94,7 @@ export default function ModalEditarDespesa({
               </Text>
             </Pressable>
 
+            {/* Fecha a edição sem salvar as mudanças feitas no formulário. */}
             <Pressable
               onPress={onCancelar}
               style={styles.botaoCancelarEdicao}

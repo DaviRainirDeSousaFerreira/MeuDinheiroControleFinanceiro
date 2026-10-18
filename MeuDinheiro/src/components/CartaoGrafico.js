@@ -1,12 +1,17 @@
+// Text e View são os componentes básicos usados para compor a interface.
 import { Text, View } from 'react-native';
+// PieChart é o componente da biblioteca que desenha o gráfico de rosca.
 import { PieChart } from 'react-native-gifted-charts';
 import { styles } from '../styles/appStyles';
 
+// Este componente recebe os dados já calculados pelo App por meio de props.
+// Assim, ele se preocupa em exibir o gráfico, e não em cadastrar ou filtrar despesas.
 export default function CartaoGrafico({
   dadosGrafico,
   gastosPorCategoria,
   formatarMoeda,
 }) {
+  // Quando não existem gastos, mostra uma mensagem; caso contrário, desenha o gráfico e a legenda.
   return (
         <View style={styles.cartaoGrafico}>
           
@@ -26,12 +31,14 @@ export default function CartaoGrafico({
           </View>
 
 
+          {/* Evita mostrar um gráfico vazio quando nenhuma categoria tem valores. */}
           {dadosGrafico.length === 0 ? (
             <Text style={styles.textoSemGrafico}>
               Não há gastos para exibir neste período.
             </Text>
           ) : (
             <>
+              {/* 'donut' transforma o gráfico de pizza em uma rosca; 'data' contém valores e cores. */}
               <PieChart
                 data={dadosGrafico}
                 donut
@@ -52,6 +59,7 @@ export default function CartaoGrafico({
                 )}
               />
 
+              {/* Legenda: uma linha para cada categoria com gastos, incluindo percentual e valor. */}
               {gastosPorCategoria
                 .filter(item => item.total > 0)
                 .map(item => {
