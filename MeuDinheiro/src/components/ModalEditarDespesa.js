@@ -1,3 +1,7 @@
+// O arquivo ModalEditarDespesa.js cria a janela de edição de despesas
+
+// permitindo alterar o nome, o valor e a categoria de uma despesa, além de salvar as alterações ou cancelar a edição
+
 // Componentes React Native usados para criar a janela de edição e seus campos.
 import { Modal, Pressable, Text, TextInput, View } from 'react-native';
 // Reutiliza a mesma lista de categorias usada no formulário principal.

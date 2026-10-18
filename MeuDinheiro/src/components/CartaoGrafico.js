@@ -1,3 +1,7 @@
+// O arquivo CartaoGrafico.js cria o cartão “Gastos por categoria”
+
+// exibindo um gráfico em rosca e uma legenda com o nome de cada categoria
+
 // Text e View são os componentes básicos usados para compor a interface.
 import { Text, View } from 'react-native';
 // PieChart é o componente da biblioteca que desenha o gráfico de rosca.

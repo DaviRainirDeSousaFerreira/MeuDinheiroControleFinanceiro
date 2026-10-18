@@ -1,8 +1,14 @@
+// O arquivo App.js é o componente principal do MeuDinheiro responsável por gerenciar os dados e as funcionalidades do aplicativo
+
+// como cadastrar, editar e excluir despesas, calcular gastos, aplicar filtros, controlar o limite mensal, salvar informações no dispositivo e organizar a interface.
+
 // Hooks do React: useState guarda valores que mudam; useEffect executa tarefas quando a tela inicia ou quando dados mudam.
+
+// Hooks são funções especiais do React que permitem usar recursos como estados, efeitos e outras funcionalidades dentro dos componentes
 import { useEffect, useState } from 'react';
+
 // Controla a aparência da barra de status do celular (onde aparecem hora, bateria e sinal).
 import { StatusBar } from 'expo-status-bar';
-
 
 // Componentes básicos usados para montar a interface do aplicativo.
 import {
@@ -14,31 +20,45 @@ import {
   Alert,
   Modal,
 } from 'react-native';
-// Lista centralizada das categorias, seus ícones e suas cores.
+
+// O arquivo categorias.js centraliza as informações que descrevem cada categoria de despesa
 import { categorias } from './src/constants/categorias';
-// Funções auxiliares para exibir valores em reais e validar/formatar datas.
+
+// Funções auxiliares dentro de formatacao.js para exibir valores em reais e validar/formatar datas 
+// O arquivo formatacao.js reúne funções utilitárias de formatação
 import {
   formatarMoeda,
   aplicarMascaraData,
   converterDataBrasileira,
 } from './src/utils/formatacao';
-// Funções que leem e gravam informações no armazenamento local do celular.
+
+// Funções dentrode armazenamento.js que leem e gravam informações no armazenamento local do celular.
 import { lerDados, salvarDados } from './src/storage/armazenamento';
-// Objeto com os estilos visuais separados do código da tela.
+
+// Estilos visuais que estão dentro do arquivo appStyles.js
 import { styles } from './src/styles/appStyles';
+
 // Componentes visuais separados para manter este arquivo mais fácil de ler.
+// O arquivo ModalEditarDespesa.js cria a janela de edição de despesas
+// O arquivo CartaoGrafico.js exibe um gráfico em rosca e uma legenda com o nome de cada categoria
 import CartaoGrafico from './src/components/CartaoGrafico';
 import ModalEditarDespesa from './src/components/ModalEditarDespesa';
 
 
-
-
 // Componente principal: coordena os dados, as regras e a tela do MeuDinheiro.
 export default function App() {
-  // Cada useState guarda um valor que pode mudar durante o uso do aplicativo.
-  // Nome e valor são os campos do formulário de cadastro/edição.
+
+  // nome: é a variável que guarda o valor atual do nome digitado pelo usuário.
+  // setNome: é a função que atualiza o valor guardado em nome.
+  // useState(''): cria esse estado, começando com um texto vazio ('').
+  // um estado (state) é uma informação que o aplicativo guarda e que pode mudar durante o uso
   const [nome, setNome] = useState('');
+
+  // valor: variável que guarda o valor digitado
+  // setValor: função usada para atualizar o estado valor
+  // useState(''): cria o estado começando com um texto vazio
   const [valor, setValor] = useState('');
+
   // Categoria escolhida no formulário e categoria usada para filtrar a lista.
   const [categoriaSelecionada, setCategoriaSelecionada] = useState('Alimentação');
   const [filtroCategoria, setFiltroCategoria] = useState('Todas');

@@ -1,3 +1,4 @@
+// O arquivo appStyles.js centraliza os estilos visuais do aplicativo
 // StyleSheet organiza os estilos usados pelos componentes React Native.
 // Os nomes abaixo são referenciados no JSX, por exemplo style={styles.container}.
 // Dicas: flex: 1 ocupa o espaço disponível; padding cria espaço interno; margin cria espaço externo;

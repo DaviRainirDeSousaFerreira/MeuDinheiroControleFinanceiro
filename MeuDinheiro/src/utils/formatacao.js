@@ -1,3 +1,7 @@
+// O arquivo formatacao.js reúne funções utilitárias
+
+// para formatar valores em reais, aplicar uma máscara ao digitar datas e converter datas brasileiras para o formato Date, validando se elas existem no calendário
+
 // Recebe um número e o transforma em texto no formato monetário brasileiro, por exemplo R$ 25,90.
 export function formatarMoeda(numero) {
   return numero.toLocaleString('pt-BR', {
