@@ -1,5 +1,7 @@
-// O arquivo categorias.js centraliza as informações que descrevem cada categoria de despesa
-// Configuração central das categorias do aplicativo.
+// O arquivo categorias.js reúne todas as informações sobre as categorias de despesas
+// As informações que descrevem cada categoria de despesa
+// Como Alimentação, Transporte, Lazer e Outros, incluindo informações como nomes, emojis e cores.
+
 // Cada objeto reúne o nome exibido, o emoji e uma cor de fundo para a lista.
 // Para adicionar uma categoria, inclua um novo objeto seguindo este mesmo formato.
 export const categorias = [

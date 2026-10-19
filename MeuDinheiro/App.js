@@ -1,150 +1,195 @@
-// O arquivo App.js é o componente principal do MeuDinheiro responsável por gerenciar os dados e as funcionalidades do aplicativo
-
-// como cadastrar, editar e excluir despesas, calcular gastos, aplicar filtros, controlar o limite mensal, salvar informações no dispositivo e organizar a interface.
-
-// Hooks do React: useState guarda valores que mudam; useEffect executa tarefas quando a tela inicia ou quando dados mudam.
-
-// Hooks são funções especiais do React que permitem usar recursos como estados, efeitos e outras funcionalidades dentro dos componentes
+// Hooks ( UseState, UseEffect ) Funções especiais do React
 import { useEffect, useState } from 'react';
 
-// Controla a aparência da barra de status do celular (onde aparecem hora, bateria e sinal).
+// Componente que permite controlar a aparência da barra de status do celular
 import { StatusBar } from 'expo-status-bar';
 
-// Componentes básicos usados para montar a interface do aplicativo.
+// Componentes React Native
 import {
-  Text,
-  View,
-  TextInput,
-  Pressable,
-  ScrollView,
-  Alert,
-  Modal,
+ Text,
+ View,
+ TextInput,
+ Pressable,
+ ScrollView,
+ Alert, //Api usada para exibir alertas nativos
+ Modal,
 } from 'react-native';
 
-// O arquivo categorias.js centraliza as informações que descrevem cada categoria de despesa
-import { categorias } from './src/constants/categorias';
+// Importando recursos de arquivos
+// Importando as categorias
+import { categorias } from './src/constants/categorias'; 
 
-// Funções auxiliares dentro de formatacao.js para exibir valores em reais e validar/formatar datas 
-// O arquivo formatacao.js reúne funções utilitárias de formatação
+// Importando funções de formatação
 import {
-  formatarMoeda,
-  aplicarMascaraData,
-  converterDataBrasileira,
+ formatarMoeda,
+ aplicarMascaraData,
+ converterDataBrasileira,
 } from './src/utils/formatacao';
 
-// Funções dentrode armazenamento.js que leem e gravam informações no armazenamento local do celular.
+// Importando funções de armazenamento
 import { lerDados, salvarDados } from './src/storage/armazenamento';
 
-// Estilos visuais que estão dentro do arquivo appStyles.js
+// Importando os estilos
 import { styles } from './src/styles/appStyles';
 
-// Componentes visuais separados para manter este arquivo mais fácil de ler.
-// O arquivo ModalEditarDespesa.js cria a janela de edição de despesas
-// O arquivo CartaoGrafico.js exibe um gráfico em rosca e uma legenda com o nome de cada categoria
+// Importando o componente do gráfico
 import CartaoGrafico from './src/components/CartaoGrafico';
+
+// Importando o modal de edição
 import ModalEditarDespesa from './src/components/ModalEditarDespesa';
 
 
 // Componente principal: coordena os dados, as regras e a tela do MeuDinheiro.
 export default function App() {
 
-  // nome: é a variável que guarda o valor atual do nome digitado pelo usuário.
-  // setNome: é a função que atualiza o valor guardado em nome.
-  // useState(''): cria esse estado, começando com um texto vazio ('').
-  // um estado (state) é uma informação que o aplicativo guarda e que pode mudar durante o uso
+  // Estados relacionados ao cadastro de despesas
   const [nome, setNome] = useState('');
 
-  // valor: variável que guarda o valor digitado
-  // setValor: função usada para atualizar o estado valor
-  // useState(''): cria o estado começando com um texto vazio
   const [valor, setValor] = useState('');
+  
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState('Alimentação'); 
 
-  // Categoria escolhida no formulário e categoria usada para filtrar a lista.
-  const [categoriaSelecionada, setCategoriaSelecionada] = useState('Alimentação');
   const [filtroCategoria, setFiltroCategoria] = useState('Todas');
-  // Array com todas as despesas registradas. Cada item tem id, nome, valor, categoria e data.
+
   const [despesas, setDespesas] = useState([]);
-  // Indica quando a leitura inicial das despesas terminou, para não salvar uma lista vazia antes de carregar os dados antigos.
+
+  // Estados relacionados ao carregamento e ao limite mensal
   const [carregamentoConcluido, setCarregamentoConcluido] = useState(false);
-  // Limite mensal salvo; começa em R$ 800 se ainda não houver outro valor armazenado.
+
   const [limiteMensal, setLimiteMensal] = useState('800');
+
   const [limiteCarregado, setLimiteCarregado] = useState(false);
+
   const [limiteInput, setLimiteInput] = useState('800');
-  // Campos do filtro de período. São textos no formato DD/MM/AAAA.
+
+  // Estados relacionados ao filtro por período e à edição
   const [dataInicial, setDataInicial] = useState('');
-  const [dataFinal, setDataFinal] = useState('');  
-  // Guarda a despesa que está sendo editada. null significa que nenhuma está em edição.
+
+  const [dataFinal, setDataFinal] = useState('');
+
   const [despesaEditando, setDespesaEditando] = useState(null);
+
   const [dataDespesaInput, setDataDespesaInput] = useState('');
+
   const [modalEdicaoVisivel, setModalEdicaoVisivel] = useState(false);
   
-  // Ao abrir o app, lê as despesas salvas no dispositivo.
-  // O array de dependências vazio [] faz este efeito executar apenas na montagem da tela.
   useEffect(() => {
+    // Cria uma função assíncrona chamada "carregarDespesas"
+    // precisa ser assíncrona porque ela realiza uma operação que pode demorar para terminar 
+    // Por exemplo: buscar as despesas salvas no armazenamento local do celular.
     async function carregarDespesas() {
       try {
-        const dadosSalvos = await lerDados(
-          '@meudinheiro:despesas'
+        // Aqui, o aplicativo procura as despesas salvas usando a função "lerDados"
+        // "lerDados" é a função que você importou do arquivo "armazenamento.js".
+        const dadosSalvos = await lerDados( 
+          // "await" espera a operação terminar antes de continuar.
+          // chave usada para identificar onde as despesas estão salvas
+          '@meudinheiro:despesas' 
         );
-
+        
+        // Verifica se foram encontrados dados salvos
+        // Se "dadosSalvos" for diferente "null",
+        // então existe algum valor salvo nessa chave.
         if (dadosSalvos !== null) {
+          // transforma o texto JSON em uma lista JavaScript
+          // e atualiza o estado "despesas" com essa lista.
           setDespesas(JSON.parse(dadosSalvos));
         }
       } catch (erro) {
+        // se ocorrer um erro o console registra uma mensagem
         console.error('Erro ao carregar despesas:', erro);
       } finally {
+        //O bloco "finally" é executado quando a operação termina
+        //indica que a tentativa de carregamento inicial das despesas terminou
         setCarregamentoConcluido(true);
       }
     }
-
+  
+    // Essa linha chama a função que foi definida anteriormente
+    // Apenas declarar uma função não faz com que ela seja executada
+    // é necessário chamá-la para executar seu conteúdo.
     carregarDespesas();
   }, []);
 
-  // Recupera o limite mensal salvo anteriormente, se existir.
+  // O array vazio "[]" indica que o efeito é executado quando o componente é montado
+  // ou seja quando o aplicativo abre essa tela pela primeira vez.
+
   useEffect(() => {
+    // Você está declarando uma função assíncrona chamada "carregarLimite"
     async function carregarLimite() {
+
       try {
+        // recupera do armazenamento local
+        // o valor associado à chave do limite mensal "@meudinheiro:limiteMensal"
         const limiteSalvo = await lerDados(
           '@meudinheiro:limiteMensal'
         );
+    
+        // Verifica se encontrou algum valor salvo
+        // se "limiteSalvo for diferente de null"
+        // então existe um valor salvo, o código dentro do "if" será executado
+        if (limiteSalvo !== null) {
+          // Atualiza o estado "limiteMensal" com o valor recuperado
+          // representa o limite utilizado nos cálculos para acompanhar os gastos
+          setLimiteMensal(limiteSalvo);
+          // Atualiza o estado "limiteInput" com o mesmo valor.
+          // representa o valor da caixa de texto que o usuário pode ver e editar
+          setLimiteInput(limiteSalvo);
+        }
 
-      if (limiteSalvo !== null) {
-        setLimiteMensal(limiteSalvo);
-        setLimiteInput(limiteSalvo);
-      }
       } catch (erro) {
+        // executa caso ocorra um erro durante a execução do "try"
+	      // exibe uma mensagem de erro no console 
         console.error('Erro ao carregar limite mensal:', erro);
       } finally {
-        setLimiteCarregado(true);
+        // O finally é executado sempre, mesmo se ocorrer um erro.
+	      // atualiza o estado "limiteCarregado" para "true"
+	      // Indica que a tentativa de carregar o limite terminou.
+        setLimiteCarregado(true); 
       }
     }
-
+  
+    // chama a função para executá-la
+    // Sem essa chamada a função seria apenas declarada
     carregarLimite();
   }, []);
+ 
+// O array vazio "[]" indica que o efeito é executado quando o componente é montado
+// ou seja quando o aplicativo abre essa tela pela primeira vez.
   
-  // Sempre que a lista de despesas mudar, grava a nova versão no armazenamento.
-  // A verificação evita sobrescrever os dados salvos antes de terminar a leitura inicial.
+  
   useEffect(() => {
+	  // verifica se o carregamento inicial das despesas ainda não foi concluído.
     if (!carregamentoConcluido) {
       return;
     }
-
+	
+	  // cria um fnção assíncrona chamada "salvarDespesas()"
     async function salvarDespesas() {
       try {
+        // função "salvarDados()" importada do arquivo "armazenamento.js"
+        // recebe 2 argumentos
+        // O "await" aguarda a operação assíncrona de salvamento terminar antes de continuar a execução dessa função.
         await salvarDados(
-          '@meudinheiro:despesas',
-          JSON.stringify(despesas)
+        // chave que identifica onde a lista de despesas será salva.
+        '@meudinheiro:despesas',
+        // Converte a lista de despesas, que é um valor JavaScript, em um texto no formato JSON
+        JSON.stringify(despesas)
         );
-      } catch (erro) {
+
+      } catch (erro) { // executa caso ocorra um erro durante a execução do "try".
+        // mostra uma mensagem de erro no console
         console.error('Erro ao salvar despesas:', erro);
       }
     }
-
+    
+    // chama a função que foi declarada
     salvarDespesas();
   }, [despesas, carregamentoConcluido]);
+ 
+  //O array contém dois estados que fazem o efeito ser executado novamente quando seus valores mudam
 
-
-  // Salva o limite quando ele muda, mas somente depois que o valor inicial foi carregado.
+  // Terceiro efeito
   useEffect(() => {
     if (!limiteCarregado) {
       return;
@@ -165,18 +210,17 @@ export default function App() {
   }, [limiteMensal, limiteCarregado]);
 
 
-  // Soma o valor de todas as despesas, independentemente de filtros de tela.
-  // reduce percorre a lista e acumula cada valor em um único total.
+  
   const totalGastos = despesas.reduce(
 (total, despesa) => total + despesa.valor,
 0
 );
 
 
-  // Data atual usada para descobrir quais despesas pertencem ao mês corrente.
+  
   const agora = new Date();
 
-  // Soma somente as despesas do mês e ano atuais. Despesas antigas sem data são ignoradas.
+  
   const gastosMes = despesas
     .filter(despesa => {
       if (!despesa.data) {
@@ -192,23 +236,23 @@ export default function App() {
     })
     .reduce((total, despesa) => total + despesa.valor, 0);
 
-  // Converte o limite, que está guardado como texto, para número para fazer cálculos.
+  
   const limiteNumerico = Number(limiteMensal.replace(',', '.'));
 
-  // Percentual do limite mensal já utilizado; impede divisão por zero.
+  
   const percentualLimite =
     limiteNumerico > 0
       ? (gastosMes / limiteNumerico) * 100
       : 0;
 
-  // true quando os gastos do mês atingem ou ultrapassam o limite definido.
+  
   const limiteAtingido = gastosMes >= limiteNumerico;
 
-  // Quanto ainda resta do limite. Pode ficar negativo se o limite for ultrapassado.
+  
   const saldoLimite = limiteNumerico - gastosMes;
 
 
-  // Valida o campo e atualiza o limite mensal usado nos cálculos e salvo pelo useEffect.
+  
   function salvarNovoLimite() {
     const valorLimite = Number(limiteInput.replace(',', '.'));
 
@@ -233,7 +277,7 @@ export default function App() {
     );
   }
 
-  // Preenche os campos com os dados da despesa escolhida e abre o modal de edição.
+  
   function editarDespesa(despesa) {
     setDespesaEditando(despesa);
     setModalEdicaoVisivel(true);
@@ -253,7 +297,7 @@ export default function App() {
     }
   }
   
-  // Fecha o modal e limpa os campos temporários da edição.
+  
   function cancelarEdicao() {
     setModalEdicaoVisivel(false);
     setDespesaEditando(null);
@@ -263,10 +307,10 @@ export default function App() {
     setDataDespesaInput('');
   }
 
-  // Valida o formulário. Se houver uma despesa em edição, atualiza-a; caso contrário, cria uma nova.
+  
   function adicionarDespesa() {
 
-    // trim() remove espaços no início e no fim do nome; o valor é convertido para número.
+    
     const nomeFormatado = nome.trim();
     const valorNumerico = Number(valor.replace(',', '.'));
 
@@ -290,8 +334,7 @@ export default function App() {
       return;
     }
 
-    // Se houver uma despesa selecionada, atualiza ela. map() cria uma nova lista,
-    // substituindo somente o item cujo id corresponde ao item em edição.
+    
     if (despesaEditando) {
       const despesasAtualizadas = despesas.map(item =>
         item.id === despesaEditando.id
@@ -318,8 +361,7 @@ export default function App() {
       return;
     }
 
-    // Caso contrário, registra uma nova despesa. O id diferencia cada item,
-    // e toISOString() salva a data/hora em um formato padronizado.
+    
     const novaDespesa = {
       id: `${Date.now()}-${Math.random()}`,
       nome: nomeFormatado,
@@ -339,15 +381,14 @@ export default function App() {
   }
 
 
-  // Cria uma lista sem a despesa cujo id foi informado.
+  
   function excluirDespesa(id) {
     setDespesas(lista =>
       lista.filter(despesa => despesa.id !== id)
     );
   }
 
-  // Busca os metadados da categoria para mostrar o ícone e a cor na lista.
-  // A última categoria serve como alternativa caso o nome não seja encontrado.
+  
   function obterCategoria(nomeCategoria) {
     return categorias.find(
       categoria => categoria.nome === nomeCategoria
@@ -355,19 +396,17 @@ export default function App() {
   }
 
   
-  // Converte as datas digitadas para objetos Date para compará-las com as datas das despesas.
+  
   const dataInicialConvertida = converterDataBrasileira(dataInicial);
   const dataFinalConvertida = converterDataBrasileira(dataFinal);
 
-  // Cria uma lista para exibição que respeita o filtro de categoria e o período escolhido.
-  // A lista original 'despesas' não é alterada por este filtro.
+  
   const despesasFiltradas = despesas.filter(despesa => {
     const categoriaCorreta =
       filtroCategoria === 'Todas' ||
       despesa.categoria === filtroCategoria;
 
-    // Mantém despesas antigas sem data somente
-    // quando nenhum período foi informado
+    
     if (!despesa.data) {
       return (
         categoriaCorreta &&
@@ -379,7 +418,7 @@ export default function App() {
     const dataDespesa = new Date(despesa.data);
     dataDespesa.setHours(0, 0, 0, 0);
 
-    // Não aplica datas incompletas ou inválidas
+    
     if (
       (dataInicial && !dataInicialConvertida) ||
       (dataFinal && !dataFinalConvertida)
@@ -402,7 +441,7 @@ export default function App() {
     );
   });
 
-  // Calcula o total de gastos em cada categoria, usando a lista já filtrada por categoria/data.
+  
   const gastosPorCategoria = [
     'Alimentação',
     'Transporte',
@@ -419,7 +458,7 @@ export default function App() {
     };
   });
 
-  // O gráfico precisa de itens com value e color; categorias sem gastos não são exibidas.
+  
   const dadosGrafico = gastosPorCategoria
     .filter(item => item.total > 0)
     .map(item => {
@@ -437,7 +476,7 @@ export default function App() {
       };
     });
 
-  // A partir daqui começa o JSX: a estrutura visual que o React Native desenha na tela.
+  
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
